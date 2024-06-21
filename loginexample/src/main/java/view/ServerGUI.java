@@ -4,6 +4,8 @@ import model.Student;
 import model.StudentDAO;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -34,6 +36,7 @@ public class ServerGUI extends JFrame {
         setLocationRelativeTo(null);
 
         idField = new JTextField(15);
+        idField.setEditable(false); // ID field should not be editable
         nameField = new JTextField(15);
         roomField = new JTextField(15);
         ageField = new JTextField(15);
@@ -100,86 +103,175 @@ public class ServerGUI extends JFrame {
         studentTable = new JTable(tableModel);
         scrollPane = new JScrollPane(studentTable);
 
+        studentTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent event) {
+                if (!event.getValueIsAdjusting()) {
+                    int selectedRow = studentTable.getSelectedRow();
+                    if (selectedRow != -1) {
+                        idField.setText(tableModel.getValueAt(selectedRow, 0).toString());
+                        nameField.setText(tableModel.getValueAt(selectedRow, 1).toString());
+                        roomField.setText(tableModel.getValueAt(selectedRow, 2).toString());
+                        ageField.setText(tableModel.getValueAt(selectedRow, 3).toString());
+                        genderField.setText(tableModel.getValueAt(selectedRow, 4).toString());
+                        electricityBillField.setText(tableModel.getValueAt(selectedRow, 5).toString());
+                        waterBillField.setText(tableModel.getValueAt(selectedRow, 6).toString());
+                        moveInDateField.setText(tableModel.getValueAt(selectedRow, 7).toString());
+                        roomRentField.setText(tableModel.getValueAt(selectedRow, 8).toString());
+                    }
+                }
+            }
+        });
+
         getContentPane().add(inputPanel, BorderLayout.NORTH);
         getContentPane().add(scrollPane, BorderLayout.CENTER);
     }
 
+    private void clearFields() {
+        idField.setText("");
+        nameField.setText("");
+        roomField.setText("");
+        ageField.setText("");
+        genderField.setText("");
+        electricityBillField.setText("");
+        waterBillField.setText("");
+        moveInDateField.setText("");
+        roomRentField.setText("");
+    }
+
     private void addStudent() {
-        try {
-            String name = nameField.getText();
-            String room = roomField.getText();
-            int age = Integer.parseInt(ageField.getText());
-            String gender = genderField.getText();
-            double electricityBill = Double.parseDouble(electricityBillField.getText());
-            double waterBill = Double.parseDouble(waterBillField.getText());
-            String moveInDate = moveInDateField.getText();
-            double roomRent = Double.parseDouble(roomRentField.getText());
-            Student student = new Student(name, room, age, gender, electricityBill, waterBill, moveInDate, roomRent);
-            studentDAO.saveStudent(student);
-            updateTable();
-            JOptionPane.showMessageDialog(this, "Student added successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to add student.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                try {
+                    String name = nameField.getText();
+                    String room = roomField.getText();
+                    int age = Integer.parseInt(ageField.getText());
+                    String gender = genderField.getText();
+                    double electricityBill = Double.parseDouble(electricityBillField.getText());
+                    double waterBill = Double.parseDouble(waterBillField.getText());
+                    String moveInDate = moveInDateField.getText();
+                    double roomRent = Double.parseDouble(roomRentField.getText());
+                    Student student = new Student(name, room, age, gender, electricityBill, waterBill, moveInDate, roomRent);
+                    studentDAO.saveStudent(student);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    throw new Exception("Failed to add student");
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    updateTable();
+                    clearFields();
+                    JOptionPane.showMessageDialog(ServerGUI.this, "Student added successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(ServerGUI.this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
     private void updateStudent() {
-        try {
-            int id = Integer.parseInt(idField.getText());
-            String name = nameField.getText();
-            String room = roomField.getText();
-            int age = Integer.parseInt(ageField.getText());
-            String gender = genderField.getText();
-            double electricityBill = Double.parseDouble(electricityBillField.getText());
-            double waterBill = Double.parseDouble(waterBillField.getText());
-            String moveInDate = moveInDateField.getText();
-            double roomRent = Double.parseDouble(roomRentField.getText());
-            Student student = new Student(name, room, age, gender, electricityBill, waterBill, moveInDate, roomRent);
-            student.setId(id);
-            studentDAO.updateStudent(student);
-            updateTable();
-            JOptionPane.showMessageDialog(this, "Student updated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to update student.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                try {
+                    int id = Integer.parseInt(idField.getText());
+                    String name = nameField.getText();
+                    String room = roomField.getText();
+                    int age = Integer.parseInt(ageField.getText());
+                    String gender = genderField.getText();
+                    double electricityBill = Double.parseDouble(electricityBillField.getText());
+                    double waterBill = Double.parseDouble(waterBillField.getText());
+                    String moveInDate = moveInDateField.getText();
+                    double roomRent = Double.parseDouble(roomRentField.getText());
+                    Student student = new Student(name, room, age, gender, electricityBill, waterBill, moveInDate, roomRent);
+                    student.setId(id);
+                    studentDAO.updateStudent(student);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    throw new Exception("Failed to update student");
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    updateTable();
+                    clearFields();
+                    JOptionPane.showMessageDialog(ServerGUI.this, "Student updated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(ServerGUI.this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
     private void deleteStudent() {
-        try {
-            int id = Integer.parseInt(idField.getText());
-            studentDAO.deleteStudent(id);
-            updateTable();
-            JOptionPane.showMessageDialog(this, "Student deleted successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to delete student.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                try {
+                    int id = Integer.parseInt(idField.getText());
+                    studentDAO.deleteStudent(id);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    throw new Exception("Failed to delete student");
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    updateTable();
+                    clearFields();
+                    JOptionPane.showMessageDialog(ServerGUI.this, "Student deleted successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(ServerGUI.this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
-
     private void updateTable() {
-        tableModel.setRowCount(0);
-        try {
-            List<Student> students = studentDAO.getAllStudents();
-            for (Student student : students) {
-                tableModel.addRow(new Object[]{
-                        student.getId(),
-                        student.getName(),
-                        student.getRoom(),
-                        student.getAge(),
-                        student.getGender(),
-                        student.getElectricityBill(),
-                        student.getWaterBill(),
-                        student.getMoveInDate(),
-                        student.getRoomRent()
-                });
+        new SwingWorker<List<Student>, Void>() {
+            @Override
+            protected List<Student> doInBackground() throws Exception {
+                return studentDAO.getAllStudents();
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to retrieve students.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
+
+            @Override
+            protected void done() {
+                try {
+                    List<Student> students = get();
+                    tableModel.setRowCount(0); // Clear existing rows
+                    for (Student student : students) {
+                        Object[] rowData = {
+                                student.getId(),
+                                student.getName(),
+                                student.getRoom(),
+                                student.getAge(),
+                                student.getGender(),
+                                student.getElectricityBill(),
+                                student.getWaterBill(),
+                                student.getMoveInDate(),
+                                student.getRoomRent()
+                        };
+                        tableModel.addRow(rowData);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(ServerGUI.this, "Failed to retrieve students.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
     public static void main(String[] args) {
